@@ -8,7 +8,7 @@ const style = css`
   ha-card {
     flex-direction: column;
     flex: 1;
-    padding: 16px 0;
+    // padding: 16px 0;
     position: relative;
     overflow: hidden;
   }
