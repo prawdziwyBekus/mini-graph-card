@@ -974,10 +974,13 @@ class MiniGraphCard extends LitElement {
   }
 
   _convertState(res) {
-    const resultIndex = this.config.state_map.findIndex(s => s.value === res.state);
+    let resultIndex = this.config.state_map.findIndex(s => s.value === res.state);
     if (resultIndex === -1) {
       return;
     }
+
+    const stateMap = this.config.state_map[resultIndex];
+    resultIndex = this.config.state_map.findIndex(s => s.label === stateMap.label);
 
     res.state = resultIndex;
   }
