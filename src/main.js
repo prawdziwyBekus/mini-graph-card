@@ -113,7 +113,7 @@ class MiniGraphCard extends LitElement {
           this.config.height,
           [this.config.show.fill ? 0 : this.config.line_width, this.config.line_width],
           this.config.hours_to_show,
-          this.config.points_per_hour,
+          entity.points_per_hour || this.config.points_per_hour,
           entity.aggregate_func || this.config.aggregate_func,
           this.config.group_by,
           getFirstDefinedItem(
@@ -497,8 +497,7 @@ class MiniGraphCard extends LitElement {
   renderSvg() {
     const { height } = this.config;
     return svg`
-      <svg width='100%' height=${height !== 0 ? '100%' : 0} viewBox='0 0 500 ${height}'
-        @click=${e => e.stopPropagation()}>
+      <svg width='100%' height=${height !== 0 ? '100%' : 0} viewBox='0 0 500 ${height}'>
         <g>
           <defs>
             ${this.renderSvgGradient(this.gradient)}
