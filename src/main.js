@@ -2,6 +2,7 @@ import { LitElement, html, svg } from 'lit-element';
 import localForage from 'localforage/src/localforage';
 import { stateIcon } from 'custom-card-helpers';
 import SparkMD5 from 'spark-md5';
+import { interpolateRgb } from 'd3-interpolate';
 import Graph from './graph';
 import style from './style';
 import handleClick from './handleClick';
@@ -18,7 +19,6 @@ import {
 import {
   getMin, getAvg, getMax,
   getTime, getMilli,
-  interpolateColor,
   compress, decompress,
   getFirstDefinedItem,
   compareArray,
@@ -149,9 +149,9 @@ class MiniGraphCard extends LitElement {
 
   shouldUpdate(changedProps) {
     if (UPDATE_PROPS.some(prop => changedProps.has(prop))) {
-      this.color = this.intColor(
+      this.color = this.computeColor(
         this.tooltip.value !== undefined
-          ? this.tooltip.value : this.entity[0] && this.entity[0].state,
+          ? this.tooltip.value : this.getEntityState(0),
         this.tooltip.entity || 0,
       );
       return true;
@@ -227,6 +227,14 @@ class MiniGraphCard extends LitElement {
   }
 
   renderIcon() {
+    if (this.config.icon_image !== undefined) {
+      return html`
+        <div class="icon">
+          <img src="${this.config.icon_image}" height="25"/>
+        </div>
+      `;
+    }
+
     const { icon, icon_adaptive_color } = this.config.show;
     return icon ? html`
       <div class="icon" loc=${this.config.align_icon}
@@ -251,15 +259,18 @@ class MiniGraphCard extends LitElement {
   }
 
   renderStates() {
-    const [firstEntityConfig] = this.config.entities;
     if (this.config.show.state)
       return html`
         <div class="states flex" loc=${this.config.align_state}>
-          ${this.renderState(firstEntityConfig, 0)}
-          <div class="states--secondary">${this.config.entities.map((entityConfig, i) => i > 0 && this.renderState(entityConfig, i) || '')}</div>
+          ${this.renderState(0)}
+          <div class="states--secondary">${this.config.entities.map((entityConfig, i) => i > 0 && this.renderState(i) || '')}</div>
           ${this.config.align_icon === 'state' ? this.renderIcon() : ''}
         </div>
       `;
+  }
+
+  getObjectAttr(obj, path) {
+    return path.split('.').reduce((res, key) => res && res[key], obj);
   }
 
   getEntityState(id) {
@@ -267,28 +278,33 @@ class MiniGraphCard extends LitElement {
     if (this.config.show.state === 'last') {
       return this.points[id][this.points[id].length - 1][V];
     } else if (entityConfig.attribute) {
-      return this.entity[id].attributes[entityConfig.attribute];
+      return this.getObjectAttr(this.entity[id].attributes, entityConfig.attribute);
     } else {
       return this.entity[id].state;
     }
   }
 
-  renderState(entityConfig, id) {
-    const isPrimary = id === 0;
-    if (isPrimary || entityConfig.show_state) {
-      const { entity, value: tooltipValue } = this.tooltip;
+  renderState(id) {
+    const isPrimary = id === 0; // rendering main state element?
+    if (isPrimary || this.config.entities[id].show_state) {
       const state = this.getEntityState(id);
+      // use tooltip data for main state element, if tooltip is active
+      const { entity: tooltipEntity, value: tooltipValue } = this.tooltip;
+      const isTooltip = isPrimary && tooltipEntity !== undefined;
+      const value = isTooltip ? tooltipValue : state;
+      const entity = isTooltip ? tooltipEntity : id;
+      const entityConfig = this.config.entities[entity];
       return html`
         <div
           class="state ${!isPrimary && 'state--small'}"
           @click=${e => this.handlePopup(e, this.entity[id])}
-          style=${entityConfig.state_adaptive_color ? `color: ${this.computeColor(state, id)};` : ''}>
-          ${entityConfig.show_indicator ? this.renderIndicator(state, id) : ''}
+          style=${entityConfig.state_adaptive_color ? `color: ${this.computeColor(value, entity)}` : ''}>
+          ${entityConfig.show_indicator ? this.renderIndicator(value, entity) : ''}
           <span class="state__value ellipsis">
-            ${this.computeState(isPrimary && tooltipValue || state)}
+            ${this.computeState(value)}
           </span>
           <span class="state__uom ellipsis">
-            ${this.computeUom(isPrimary && entity || id)}
+            ${this.computeUom(entity)}
           </span>
           ${isPrimary && this.renderStateTime() || ''}
         </div>
@@ -301,7 +317,7 @@ class MiniGraphCard extends LitElement {
     return html`
       <div class="state__time">
         ${this.tooltip.label ? html`
-          <span>${this.tooltip.label}</span>
+          <span class="tooltip--label">${this.tooltip.label}</span>
         ` : html`
           <span>${this.tooltip.time[0]}</span> -
           <span>${this.tooltip.time[1]}</span>
@@ -311,40 +327,73 @@ class MiniGraphCard extends LitElement {
   }
 
   renderGraph() {
+    const ready = (this.entity[0] && !this.Graph.some(
+      (element, index) => element._history === undefined
+      && this.config.entities[index].show_graph !== false,
+    ))
+    || this.config.show.loading_indicator === false;
     return this.config.show.graph ? html`
       <div class="graph">
-        <div class="graph__container">
-          ${this.renderLabels()}
-          ${this.renderLabelsSecondary()}
-          <div class="graph__container__svg">
-            ${this.renderSvg()}
-          </div>
-        </div>
-        ${this.renderLegend()}
+        ${ready ? html`
+            <div class="graph__container">
+              ${this.renderLabels()}
+              ${this.renderLabelsSecondary()}
+              <div class="graph__container__svg">
+                ${this.renderSvg()}
+              </div>
+            </div>
+            ${this.renderLegend()}
+        ` : html`<ha-spinner aria-label="Loading" size="small"></ha-spinner>`}
       </div>` : '';
+  }
+
+  computeLegend(index) {
+    let legend = this.computeName(index);
+    const state = this.getEntityState(index);
+
+    const { show_legend_state = false } = this.config.entities[index];
+
+    if (show_legend_state) {
+      legend += ` (${this.computeState(state)}`;
+      if (!(['unavailable'].includes(state))) {
+        const uom = this.computeUom(index);
+        if (!(['%', ''].includes(uom)))
+          legend += ' ';
+        legend += `${uom}`;
+      }
+      legend += ')';
+    }
+
+    return legend;
   }
 
   renderLegend() {
     if (this.visibleLegends.length <= 1 || !this.config.show.legend) return;
+
+    /* eslint-disable indent */
     return html`
       <div class="graph__legend">
-        ${this.visibleLegends.map(entity => html`
-          <div class="graph__legend__item"
-            @click=${e => this.handlePopup(e, this.entity[entity.index])}
-            @mouseenter=${() => this.setTooltip(entity.index, -1, this.getEntityState(entity.index), 'Current')}
-            @mouseleave=${() => (this.tooltip = {})}>
-            ${this.renderIndicator(this.entity[entity.index].state, entity.index)}
-            <span class="ellipsis">${this.computeName(entity.index)}</span>
-          </div>
-        `)}
+        ${this.visibleLegends.map((entity) => {
+          const legend = this.computeLegend(entity.index);
+          return html`
+            <div class="graph__legend__item"
+              @click=${e => this.handlePopup(e, this.entity[entity.index])}
+              @mouseenter=${() => this.setTooltip(entity.index, -1, this.getEntityState(entity.index), 'Current')}
+              @mouseleave=${() => (this.tooltip = {})}>
+              ${this.renderIndicator(this.getEntityState(entity.index), entity.index)}
+              <span class="ellipsis">${legend}</span>
+            </div>
+          `;
+        })}
       </div>
     `;
+    /* eslint-enable indent */
   }
 
   renderIndicator(state, index) {
     return svg`
       <svg width='10' height='10'>
-        <rect width='10' height='10' fill=${this.intColor(state, index)} />
+        <rect width='10' height='10' fill=${this.computeColor(state, index)} />
       </svg>
     `;
   }
@@ -463,7 +512,7 @@ class MiniGraphCard extends LitElement {
     if (!fill) return;
     const svgFill = this.gradient[i]
       ? `url(#grad-${this.id}-${i})`
-      : this.intColor(this.entity[i].state, i);
+      : this.computeColor(this.entity[i].state, i);
     return svg`
       <rect class='fill--rect'
         ?inactive=${this.tooltip.entity !== undefined && this.tooltip.entity !== i}
@@ -514,27 +563,34 @@ class MiniGraphCard extends LitElement {
 
   setTooltip(entity, index, value, label = null) {
     const {
+      group_by,
       points_per_hour,
       hours_to_show,
       format,
     } = this.config;
-    const offset = hours_to_show < 1 && points_per_hour < 1
-      ? points_per_hour * hours_to_show
-      : 1 / points_per_hour;
 
-    const id = Math.abs(index + 1 - Math.ceil(hours_to_show * points_per_hour));
+    // time units in milliseconds in this function
+    const interval = getMilli(1 / points_per_hour);
+    const n_points = Math.ceil(hours_to_show * points_per_hour);
+
+    // index is 0 (oldest) to n_points-1 (most recent ~= now)
+    // count of intervals from now to end of bin
+    // count is 0 (now) to n_points-1 (oldest)
+    const count = (n_points - 1) - index;
+
+    // offset end by a minute, if grouped by, e.g., date or hour
+    const oneMinute = group_by !== 'interval' ? 60000 : 0;
 
     const now = this.getEndDate();
 
-    const oneMinInHours = 1 / 60;
-    now.setMilliseconds(now.getMilliseconds() - getMilli(offset * id + oneMinInHours));
+    now.setMilliseconds(now.getMilliseconds() - oneMinute - interval * count);
     const end = getTime(now, format, this._hass.language);
-    now.setMilliseconds(now.getMilliseconds() - getMilli(offset - oneMinInHours));
+    now.setMilliseconds(now.getMilliseconds() + oneMinute - interval);
     const start = getTime(now, format, this._hass.language);
 
     this.tooltip = {
       value,
-      id,
+      count,
       entity,
       time: [start, end],
       index,
@@ -585,17 +641,6 @@ class MiniGraphCard extends LitElement {
     handleClick(this, this._hass, this.config, this.config.tap_action, entity.entity_id || entity);
   }
 
-  computeColor(inState, i) {
-    const { color_thresholds, line_color } = this.config;
-    const state = Number(inState) || 0;
-    const threshold = {
-      color: line_color[i] || line_color[0],
-      ...color_thresholds.slice(-1)[0],
-      ...color_thresholds.find(ele => ele.value < state),
-    };
-    return this.config.entities[i].color || threshold.color;
-  }
-
   get visibleEntities() {
     return this.config.entities.filter(entity => entity.show_graph !== false);
   }
@@ -621,28 +666,25 @@ class MiniGraphCard extends LitElement {
     return this.secondaryYaxisEntities.map(entity => this.Graph[entity.index]);
   }
 
-  intColor(inState, i) {
+  computeColor(inState, i) {
     const { color_thresholds, line_color } = this.config;
     const state = Number(inState) || 0;
 
     let intColor;
     if (color_thresholds.length > 0) {
-      if (this.config.show.graph === 'bar') {
-        const { color } = color_thresholds.find(ele => ele.value < state)
-          || color_thresholds.slice(-1)[0];
-        intColor = color;
+      const { color } = color_thresholds.find(ele => ele.value < state)
+        || color_thresholds.slice(-1)[0];
+      intColor = color;
+      const index = color_thresholds.findIndex(ele => ele.value < state);
+      const c1 = color_thresholds[index];
+      const c2 = color_thresholds[index - 1];
+      if (c2) {
+        const factor = (c2.value - state) / (c2.value - c1.value);
+        intColor = interpolateRgb(c2.color, c1.color)(factor);
       } else {
-        const index = color_thresholds.findIndex(ele => ele.value < state);
-        const c1 = color_thresholds[index];
-        const c2 = color_thresholds[index - 1];
-        if (c2) {
-          const factor = (c2.value - inState) / (c2.value - c1.value);
-          intColor = interpolateColor(c2.color, c1.color, factor);
-        } else {
-          intColor = index
-            ? color_thresholds[color_thresholds.length - 1].color
-            : color_thresholds[0].color;
-        }
+        intColor = index
+          ? color_thresholds[color_thresholds.length - 1].color
+          : color_thresholds[0].color;
       }
     }
 
@@ -650,7 +692,9 @@ class MiniGraphCard extends LitElement {
   }
 
   computeName(index) {
-    return this.config.entities[index].name || this.entity[index].attributes.friendly_name;
+    return this.config.entities[index].name
+      || this.entity[index].attributes.friendly_name
+      || this.entity[index].entity_id;
   }
 
   computeIcon(entity) {
@@ -664,10 +708,17 @@ class MiniGraphCard extends LitElement {
 
   computeUom(index) {
     return (
-      this.config.entities[index].unit
-      || this.config.unit
-      || this.entity[index].attributes.unit_of_measurement
-      || ''
+      this.config.entities[index].unit !== undefined
+        ? this.config.entities[index].unit
+        : (
+          this.config.unit !== undefined
+            ? this.config.unit
+            : (
+              !this.config.entities[index].attribute
+                ? (this.entity[index].attributes.unit_of_measurement || '')
+                : ''
+            )
+        )
     );
   }
 
@@ -789,8 +840,8 @@ class MiniGraphCard extends LitElement {
 
   getBoundaries(series, min, max, fallback, minRange) {
     let boundary = [
-      this.getBoundary('min', series, min, fallback[0], minRange),
-      this.getBoundary('max', series, max, fallback[1], minRange),
+      this.getBoundary('min', series, min, fallback[0]),
+      this.getBoundary('max', series, max, fallback[1]),
     ];
 
     if (minRange) {
@@ -799,10 +850,22 @@ class MiniGraphCard extends LitElement {
 
       // Doesn't matter if minBoundRange is NaN because this will be false if so
       if (diff > 0) {
-        boundary = [
-          boundary[0] - diff / 2,
-          boundary[1] + diff / 2,
+        const weights = [
+          min !== undefined && min[0] !== '~' || max === undefined ? 0 : 1,
+          max !== undefined && max[0] !== '~' || min === undefined ? 0 : 1,
         ];
+        const sum = weights[0] + weights[1];
+        if (sum > 0) {
+          boundary = [
+            boundary[0] - diff * weights[0] / sum,
+            boundary[1] + diff * weights[1] / sum,
+          ];
+        } else {
+          boundary = [
+            boundary[0] - diff / 2,
+            boundary[1] + diff / 2,
+          ];
+        }
       }
     }
 
@@ -898,7 +961,7 @@ class MiniGraphCard extends LitElement {
         newStateHistory[0].forEach((item) => {
           if (this.config.entities[index].attribute) {
             // eslint-disable-next-line no-param-reassign
-            item.state = item.attributes[this.config.entities[index].attribute];
+            item.state = this.getObjectAttr(item.attributes, this.config.entities[index].attribute);
             // eslint-disable-next-line no-param-reassign
             delete item.attributes;
           }
@@ -949,7 +1012,7 @@ class MiniGraphCard extends LitElement {
     url += `?filter_entity_id=${entityId}`;
     if (end) url += `&end_time=${end.toISOString()}`;
     if (skipInitialState) url += '&skip_initial_state';
-    if (!withAttributes) url += '&minimal_response';
+    if (!withAttributes) url += '&minimal_response&no_attributes';
     if (withAttributes) url += '&significant_changes_only=0';
     return this._hass.callApi('GET', url);
   }

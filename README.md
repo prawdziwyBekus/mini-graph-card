@@ -7,10 +7,13 @@ The card works with entities from within the **sensor** & **binary_sensor** doma
 
 ## Install
 
-### HACS (recommended)
+### HACS (recommended) 
 
 This card is available in [HACS](https://hacs.xyz/) (Home Assistant Community Store).
+
 <small>*HACS is a third party community store and is not included in Home Assistant out of the box.*</small>
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kalkih&repository=mini-graph-card)
 
 ### Manual install
 
@@ -25,8 +28,8 @@ This card is available in [HACS](https://hacs.xyz/) (Home Assistant Community St
 
 2. Grab `mini-graph-card-bundle.js`:
 
-  ```
-  $ wget https://github.com/kalkih/mini-graph-card/releases/download/v0.11.0/mini-graph-card-bundle.js
+  ```console
+  $ wget https://github.com/kalkih/mini-graph-card/releases/download/v0.13.0/mini-graph-card-bundle.js
   ```
 
 3. Add the resource reference as decribed below.
@@ -37,7 +40,7 @@ If you configure Lovelace via YAML, add a reference to `mini-graph-card-bundle.j
 
   ```yaml
   resources:
-    - url: /local/mini-graph-card-bundle.js?v=0.11.0
+    - url: /local/mini-graph-card-bundle.js?v=0.13.0
       type: module
   ```
 
@@ -60,7 +63,7 @@ Else, if you prefer the graphical editor, use the menu to add the resource:
 
   ```yaml
   resources:
-    - url: /local/mini-graph-card-bundle.js?v=0.11.0
+    - url: /local/mini-graph-card-bundle.js?v=0.13.0
       type: module
   ```
 
@@ -79,8 +82,9 @@ We recommend looking at the [Example usage section](#example-usage) to understan
 | type ***(required)*** | string |  | v0.0.1 | `custom:mini-graph-card`.
 | entities ***(required)*** | list |  | v0.2.0 | One or more sensor entities in a list, see [entities object](#entities-object) for additional entity options.
 | icon | string |  | v0.0.1 | Set a custom icon from any of the available mdi icons.
+| icon_image | string |  | v0.12.0 | Override icon with an image url
 | name | string |  | v0.0.1 | Set a custom name which is displayed beside the icon.
-| unit | string |  | v0.0.1 | Set a custom unit of measurement.
+| unit | string |  | v0.0.1 | Set a custom unit of measurement (`''` value for an empty unit).
 | tap_action | [action object](#action-object-options) |  | v0.7.0 | Action on click/tap.
 | group | boolean | `false` | v0.2.0 | Disable paddings and box-shadow, useful when nesting the card.
 | hours_to_show | integer | `24` | v0.0.2 | Specify how many hours of history the graph should present.
@@ -122,23 +126,24 @@ properties of the Entity object detailed in the following table (as per `sensor.
 
 | Name | Type | Default | Description |
 |------|:----:|:-------:|-------------|
-| entity ***(required)*** | string |  | Entity id of the sensor.
-| attribute | string | | Retrieves an attribute instead of the state
-| name | string |  | Set a custom display name, defaults to entity's friendly_name.
-| color | string |  | Set a custom color, overrides all other color options including thresholds.
-| unit | string |  | Set a custom unit of measurement, overrides `unit` set in base config.
-| aggregate_func | string |  | Override for aggregate function used to calculate point on the graph, `avg`, `median`, `min`, `max`, `first`, `last`, `sum`.
-| show_state | boolean |  | Display the current state.
-| show_indicator | boolean |  | Display a color indicator next to the state, (only when more than two states are visible).
-| show_graph | boolean |  | Set to false to completely hide the entity in the graph.
-| show_line | boolean |  | Set to false to hide the line.
-| show_fill | boolean |  | Set to false to hide the fill.
-| show_points | boolean |  | Set to false to hide the points.
-| show_legend | boolean |  | Set to false to turn hide from the legend.
-| state_adaptive_color | boolean |  | Make the color of the state adapt to the entity color.
-| y_axis | string |  | If 'secondary', displays using the secondary y-axis on the right.
-| fixed_value | boolean |  | Set to true to graph the entity's current state as a fixed value instead of graphing its state history.
-| smoothing | boolean |  | Override for a flag indicating whether to make graph line smooth.
+| entity ***(required)*** | string |         | Entity id of the sensor.
+| attribute | string |         | Retrieves an attribute or [sub-attribute (attr1.attr2...)](#accessing-attributes-in-complex-structures) instead of the state
+| name | string |         | Set a custom display name, defaults to entity's friendly_name.
+| color | string |         | Set a custom color, overrides all other color options including thresholds.
+| unit | string |         | Set a custom unit of measurement, overrides `unit` set in base config (`''` value for an empty unit).
+| aggregate_func | string |         | Override for aggregate function used to calculate point on the graph, `avg`, `median`, `min`, `max`, `first`, `last`, `sum`.
+| show_state | boolean |         | Display the current state.
+| show_legend_state | boolean |  false  | Display the current state as part of the legend.
+| show_indicator | boolean |         | Display a color indicator next to the state, (only when more than two states are visible).
+| show_graph | boolean |         | Set to false to completely hide the entity in the graph.
+| show_line | boolean |         | Set to false to hide the line.
+| show_fill | boolean |         | Set to false to hide the fill.
+| show_points | boolean |         | Set to false to hide the points.
+| show_legend | boolean |         | Set to false to turn hide from the legend.
+| state_adaptive_color | boolean |         | Make the color of the state adapt to the entity color.
+| y_axis | string |         | If 'secondary', displays using the secondary y-axis on the right.
+| fixed_value | boolean |         | Set to true to graph the entity's current state as a fixed value instead of graphing its state history.
+| smoothing | boolean |         | Override for a flag indicating whether to make graph line smooth.
 
 ```yaml
 entities:
@@ -167,6 +172,8 @@ All properties are optional.
 | labels_secondary | `hover` | `true` / `false` / `hover` | Display secondary Y-axis labels.
 | name_adaptive_color | `false` | `true` / `false` | Make the name color adapt with the primary entity color.
 | icon_adaptive_color | `false` | `true` / `false` | Make the icon color adapt with the primary entity color.
+| loading_indicator | `true` | `true` / `false` | Show loading indicator while attempting to retrieve a history.
+
 
 #### Line color object
 See [dynamic line color](#dynamic-line-color) for example usage.
@@ -202,6 +209,11 @@ color_thresholds:
   - value: 4
     color: "#0000ff"
 ```
+The example above will result in the following colors of the graph: if value is 
+* between `0` (including this value) and  `1.33333`, the color is `#ff0000`,
+* between `1.33333` (including this value) and `2.666667`, the color is `#ffff00`,
+* between `2.666667` (including this value) and `4`, the color is `#00ff00`,
+* equal to or more than `4`, the color is `#0000ff`.
 
 As a shorthand, you can just use a color string for the stops that you want interpolated:
 
@@ -442,7 +454,7 @@ entities:
   - entity: sensor.outside_temp
     aggregate_func: max
     name: Max
-    color: #e74c3c
+    color: "#e74c3c"
   - entity: sensor.outside_temp
     aggregate_func: min
     name: Min
@@ -493,7 +505,7 @@ state_map:
 
 It is possible to show a state without displaying a graph for a sensor.
 Imagine there are two CO-2 sensors & one humidity sensor; graphs are displayed for the CO-2 only, and the humidity is shown as a state only.
-```
+```yaml
 type: custom:mini-graph-card
 entities:
   - entity: sensor.xiaomi_cg_1_humidity
@@ -518,12 +530,59 @@ show:
 ```
 This method may be also used to add a calculated value with it's own `aggregate_func` option.
 
+#### Accessing attributes in complex structures
+
+When using the `attribute` option in the [entities object](#entities-object), you can access data in structured attributes, such as dictionaries and lists.
+
+##### Accessing dictionary attributes
+Suppose you have data stored inside a *dictionary* attribute named `dict_attribute`
+```yaml
+dict_attribute:
+  value_1: 53
+  value_2: 64
+  value_3: 72
+```
+Such data should be addressed as `dict_attribute.sub_attribute`:
+```yaml
+type: custom:mini-graph-card
+entities:
+  - entity: sensor.testing_object_data
+    attribute: dict_attribute.value_1
+    name: value_1 from dictionary attribute
+```
+![image](https://github.com/ildar170975/mini-graph-card/assets/71872483/0549afd5-901e-4e86-a144-edc4cd207440)
+
+##### Accessing list attributes
+
+Suppose you have data stored inside a *list* attribute named `list_attribute`:
+```yaml
+list_attribute:
+  - value_1: 67
+    value_2: 65
+    value_3: 93
+  - value_1: 134
+    value_2: 130
+    value_3: 186
+  - value_1: 201
+    value_2: 195
+    value_3: 279
+```
+Such data should be addressed as `list_attribute.index.sub_attribute`:
+```yaml
+type: custom:mini-graph-card
+entities:
+  - entity: sensor.testing_object_data_list
+    attribute: list_attribute.0.value_1
+    name: value_1 from first element of list attribute
+```
+![image](https://github.com/ildar170975/mini-graph-card/assets/71872483/eebd0cea-da93-4bf5-97a1-118edd2a9c5e)
+
 
 ## Development
 
 1. Clone this repository into your `config/www` folder using git:
 
-```
+```console
 $ git clone https://github.com/kalkih/mini-graph-card.git
 ```
 
@@ -562,7 +621,9 @@ $ npm run watch
 
 *The new `mini-graph-card-bundle.js` will be build and ready inside `/dist`.*
 
-**If you plan to submit a PR, please base it on the `dev` branch.**
+Note that the `dev` branch is the most up-to-date and matches our beta releases.
+
+Please refer to the [Contribution Guidelines](./CONTRIBUTING.md) if you're interested in contributing to the project. (And thanks for considering!)
 
 ## Getting errors?
 Make sure you have `javascript_version: latest` in your `configuration.yaml` under `frontend:`.
