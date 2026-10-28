@@ -1,6 +1,5 @@
 extends: airbnb-base
 rules:
-  linebreak-style: 0
   no-else-return: 0
   no-underscore-dangle: 0
   nonblock-statement-body-position: 0
