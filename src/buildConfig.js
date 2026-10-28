@@ -138,6 +138,13 @@ export default (config) => {
 
   conf.entities.forEach((entity, i) => {
     if (typeof entity === 'string') conf.entities[i] = { entity };
+    const pointsPerHour = conf.entities[i].points_per_hour;
+    if (pointsPerHour != null
+      && (typeof pointsPerHour !== 'number' || !Number.isFinite(pointsPerHour) || pointsPerHour <= 0)) {
+      throw new Error(
+        `The "points_per_hour" option for each entity must be a positive number.\n See ${URL_DOCS}`,
+      );
+    }
   });
 
   conf.state_map.forEach((state, i) => {
@@ -173,10 +180,20 @@ export default (config) => {
 
   if (conf.show.graph === 'bar') {
     const entities = conf.entities.length;
+    const maxPointsPerHour = MAX_BARS / (conf.hours_to_show * entities);
     if (conf.hours_to_show * conf.points_per_hour * entities > MAX_BARS) {
-      conf.points_per_hour = MAX_BARS / (conf.hours_to_show * entities);
+      conf.points_per_hour = maxPointsPerHour;
       log(`Not enough space, adjusting points_per_hour to ${conf.points_per_hour}`);
     }
+    conf.entities.forEach((entity, index) => {
+      if (entity.points_per_hour > maxPointsPerHour) {
+        conf.entities[index].points_per_hour = maxPointsPerHour;
+        log(
+          `Not enough space, adjusting points_per_hour for ${entity.entity} to `
+          + `${conf.entities[index].points_per_hour}`,
+        );
+      }
+    });
   }
 
   return conf;

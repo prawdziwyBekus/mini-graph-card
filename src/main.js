@@ -113,7 +113,7 @@ class MiniGraphCard extends LitElement {
           this.config.height,
           [this.config.show.fill ? 0 : this.config.line_width, this.config.line_width],
           this.config.hours_to_show,
-          this.config.points_per_hour,
+          entity.points_per_hour || this.config.points_per_hour,
           entity.aggregate_func || this.config.aggregate_func,
           this.config.group_by,
           getFirstDefinedItem(
@@ -546,8 +546,7 @@ class MiniGraphCard extends LitElement {
   renderSvg() {
     const { height } = this.config;
     return svg`
-      <svg width='100%' height=${height !== 0 ? '100%' : 0} viewBox='0 0 500 ${height}'
-        @click=${e => e.stopPropagation()}>
+      <svg width='100%' height=${height !== 0 ? '100%' : 0} viewBox='0 0 500 ${height}'>
         <g>
           <defs>
             ${this.renderSvgGradient(this.gradient)}
@@ -565,14 +564,14 @@ class MiniGraphCard extends LitElement {
   setTooltip(entity, index, value, label = null) {
     const {
       group_by,
-      points_per_hour,
       hours_to_show,
       format,
     } = this.config;
+    const pointsPerHour = this.Graph[entity].points;
 
     // time units in milliseconds in this function
-    const interval = getMilli(1 / points_per_hour);
-    const n_points = Math.ceil(hours_to_show * points_per_hour);
+    const interval = getMilli(1 / pointsPerHour);
+    const n_points = Math.ceil(hours_to_show * pointsPerHour);
 
     // index is 0 (oldest) to n_points-1 (most recent ~= now)
     // count of intervals from now to end of bin
@@ -1042,7 +1041,8 @@ class MiniGraphCard extends LitElement {
       return;
     }
 
-    res.state = resultIndex;
+    const stateMap = this.config.state_map[resultIndex];
+    res.state = this.config.state_map.findIndex(s => s.label === stateMap.label);
   }
 
   getEndDate() {
@@ -1064,7 +1064,11 @@ class MiniGraphCard extends LitElement {
 
   setNextUpdate() {
     if (!this.config.update_interval) {
-      const interval = 1 / this.config.points_per_hour;
+      const pointsPerHour = this.Graph.reduce(
+        (max, graph) => Math.max(max, graph.points),
+        this.config.points_per_hour,
+      );
+      const interval = 1 / pointsPerHour;
       clearInterval(this.interval);
       this.interval = setInterval(() => {
         if (!this.updating) this.updateData();

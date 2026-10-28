@@ -8,12 +8,12 @@ const style = css`
   ha-card {
     flex-direction: column;
     flex: 1;
-    padding: 16px 0 0 0;
+    padding: 0;
     position: relative;
     overflow: hidden;
   }
   ha-card > div {
-    padding: 0px 16px 16px 16px;
+    padding: 5px 16px;
   }
   ha-card > div:last-child {
     padding-bottom: 0;
@@ -242,7 +242,6 @@ const style = css`
     position: relative;
   }
   .graph__container__svg {
-    cursor: default;
     flex: 1;
   }
   svg {
@@ -334,10 +333,8 @@ const style = css`
   }
   .graph__labels > span {
     cursor: pointer;
-    background: var(--primary-background-color, white);
     border-radius: 1em;
     padding: .2em .6em;
-    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
   }
   .graph__legend {
     display: flex;
