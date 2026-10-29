@@ -13,11 +13,11 @@ This card is available in [HACS](https://hacs.xyz/) (Home Assistant Community St
 
 <small>*HACS is a third party community store and is not included in Home Assistant out of the box.*</small>
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kalkih&repository=mini-graph-card)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=prawdziwyBekus&repository=mini-graph-card)
 
 ### Manual install
 
-1. Download and copy `mini-graph-card-bundle.js` from the [latest release](https://github.com/kalkih/mini-graph-card/releases/latest) into your `config/www` directory.
+1. Download and copy `mini-graph-card-bundle.js` from the [latest release](https://github.com/prawdziwyBekus/mini-graph-card/releases/latest) into your `config/www` directory.
 
 2. Add the resource reference as decribed below.
 
@@ -29,7 +29,7 @@ This card is available in [HACS](https://hacs.xyz/) (Home Assistant Community St
 2. Grab `mini-graph-card-bundle.js`:
 
   ```console
-  $ wget https://github.com/kalkih/mini-graph-card/releases/download/v0.13.0/mini-graph-card-bundle.js
+  $ wget https://github.com/prawdziwyBekus/mini-graph-card/releases/download/v0.15.0/mini-graph-card-bundle.js
   ```
 
 3. Add the resource reference as decribed below.
@@ -40,7 +40,7 @@ If you configure Lovelace via YAML, add a reference to `mini-graph-card-bundle.j
 
   ```yaml
   resources:
-    - url: /local/mini-graph-card-bundle.js?v=0.13.0
+    - url: /local/mini-graph-card-bundle.js?v=0.15.0
       type: module
   ```
 
@@ -57,13 +57,13 @@ Else, if you prefer the graphical editor, use the menu to add the resource:
 
 1. Find your `mini-graph-card-bundle.js` file in `config/www` or wherever you ended up storing it.
 
-2. Replace the local file with the latest one attached in the [latest release](https://github.com/kalkih/mini-graph-card/releases/latest).
+2. Replace the local file with the latest one attached in the [latest release](https://github.com/prawdziwyBekus/mini-graph-card/releases/latest).
 
 3. Add the new version number to the end of the cards reference url in your `ui-lovelace.yaml` like below:
 
   ```yaml
   resources:
-    - url: /local/mini-graph-card-bundle.js?v=0.13.0
+    - url: /local/mini-graph-card-bundle.js?v=0.15.0
       type: module
   ```
 
@@ -73,6 +73,10 @@ Else, if you prefer the graphical editor, use the menu to add the resource:
 
 We recommend looking at the [Example usage section](#example-usage) to understand the basics to configure this card.
 (also) pay attention to the **required** options mentioned below.
+
+The visual editor covers common card and entity options. Select **More options**
+for graph labels, fill, sample rate, axis bounds, color thresholds, and state
+mapping. Existing YAML configurations continue to work.
 
 ### Options
 

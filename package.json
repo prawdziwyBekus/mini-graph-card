@@ -1,6 +1,6 @@
 {
   "name": "mini-graph-card",
-  "version": "0.13.0",
+  "version": "0.15.0",
   "description": "A minimalistic and customizable graph card for Home Assistant Lovelace UI",
   "keywords": [
     "home-assistant",
@@ -15,7 +15,7 @@
   ],
   "main": "src/main.js",
   "module": "src/main.js",
-  "repository": "git@github.com:kalkih/mini-graph-card.git",
+  "repository": "https://github.com/prawdziwyBekus/mini-graph-card.git",
   "author": "Karl Kihlström <mrkihlstrom@gmail.com>",
   "license": "MIT",
   "dependencies": {

@@ -8,6 +8,7 @@ import style from './style';
 import handleClick from './handleClick';
 import buildConfig from './buildConfig';
 import './initialize';
+import './editor';
 import { version } from '../package.json';
 
 import {
@@ -26,6 +27,20 @@ import {
 } from './utils';
 
 class MiniGraphCard extends LitElement {
+  static getConfigElement() {
+    return document.createElement('mini-graph-card-editor');
+  }
+
+  static getStubConfig(hass) {
+    const entity = hass && Object.keys(hass.states).find(
+      entityId => entityId.startsWith('sensor.') || entityId.startsWith('binary_sensor.'),
+    );
+    return {
+      type: 'custom:mini-graph-card',
+      entities: entity ? [entity] : [],
+    };
+  }
+
   constructor() {
     super();
     this.id = Math.random()
@@ -1089,5 +1104,6 @@ window.customCards.push({
   type: 'mini-graph-card',
   name: 'Mini Graph Card',
   preview: false,
+  config: true,
   description: 'The Mini Graph card is a minimalistic and customizable graph card',
 });

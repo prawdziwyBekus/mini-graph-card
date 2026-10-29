@@ -4,6 +4,7 @@ set -e
 
 VERSION=$1
 BRANCH=$2
+REPOSITORY=${GITHUB_REPOSITORY:-prawdziwyBekus/mini-graph-card}
 
 if [ -z "${VERSION}" ]; then
   echo "Version not specified; Exiting."
@@ -20,6 +21,5 @@ if [ ! "${BRANCH}" = "refs/heads/master" ]; then
 fi
 
 sed -i -e "s/NEXT_VERSION/v${VERSION}/g" ./README.md
-sed -i -e "s|https://github.com/kalkih/mini-graph-card/releases/download/.*/mini-graph-card-bundle.js|https://github.com/kalkih/mini-graph-card/releases/download/v${VERSION}/mini-graph-card-bundle.js|g" ./README.md
+sed -i -e "s|https://github.com/[^/]*/mini-graph-card/releases/download/.*/mini-graph-card-bundle.js|https://github.com/${REPOSITORY}/releases/download/v${VERSION}/mini-graph-card-bundle.js|g" ./README.md
 sed -i -e "s|-\surl:\s/local/mini-graph-card-bundle.js?v=.*|- url: /local/mini-graph-card-bundle.js?v=${VERSION}|g" ./README.md
-
