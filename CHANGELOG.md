@@ -1,3 +1,10 @@
+# [0.15.0](https://github.com/prawdziwyBekus/mini-graph-card/compare/v0.14.0...v0.15.0) (2026-10-29)
+
+
+### Features
+
+* add Home Assistant visual editor ([ea95842](https://github.com/prawdziwyBekus/mini-graph-card/commit/ea9584202c72e5c299e31eff14718d397a3ac131))
+
 # [0.13.0](https://github.com/kalkih/mini-graph-card/compare/v0.12.1...v0.13.0) (2025-05-29)
 
 
